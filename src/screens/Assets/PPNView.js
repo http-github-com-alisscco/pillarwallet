@@ -167,7 +167,7 @@ const PPNView = ({
   const [activeTab, setActiveTab] = useState(INCOMING);
 
   const navigateToBuyPillar = () => navigation.navigate(SERVICES);
-  const navigateToFundTank = () => navigation.navigate(FUND_TANK);
+  const navigateToFundTank = () => { navigation.navigate(FUND_TANK); };
 
   const renderInsight = () => {
     const etherspotAccount = findFirstEtherspotAccount(accounts);
@@ -348,7 +348,7 @@ const PPNView = ({
           chevronStyle={{ color: colors.secondaryText }}
           label={t('label.incomingBalance')}
           rightAddon={(<BlueText>{formatFiat(incomingBalanceInFiat, baseFiatCurrency)}</BlueText>)}
-          onPress={() => navigation.navigate(UNSETTLED_ASSETS)}
+          onPress={() => { navigation.navigate(UNSETTLED_ASSETS); }}
           color={colors.text}
           bordered
         />}

@@ -54,7 +54,7 @@ const etherspotUpgradeImage = require('assets/images/etherspotUpgrade.png');
 
 
 type Props = {
-  navigation: NavigationScreenProp,
+  navigation: NavigationScreenProp<*>,
   upgradeToEtherspot: () => void,
 };
 

@@ -28,7 +28,6 @@ import isEmpty from 'lodash.isempty';
 import t from 'translations/translate';
 
 // actions
-import { logScreenViewAction } from 'actions/analyticsActions';
 import { fetchPoolPrizeInfo } from 'actions/poolTogetherActions';
 import { estimateTransactionsAction, resetEstimateTransactionAction } from 'actions/transactionEstimateActions';
 
@@ -96,7 +95,6 @@ type Props = {
   accounts: Accounts,
   balances: Balances,
   poolPrizeInfo: PoolPrizeInfo,
-  logScreenView: (view: string, screen: string) => void,
   fetchPoolStats: (symbol: string) => void,
   assets: Assets,
   supportedAssets: Asset[],
@@ -142,10 +140,9 @@ class PoolTogetherPurchase extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    const { logScreenView, resetEstimateTransactions } = this.props;
+    const { resetEstimateTransactions } = this.props;
     resetEstimateTransactions();
     this.updatePurchaseFeeAndTransaction();
-    logScreenView('View PoolTogether Purchase', 'PoolTogetherPurchase');
   }
 
   updatePurchaseFeeAndTransaction = async () => {
@@ -329,7 +326,6 @@ const combinedMapStateToProps = (state: RootReducerState): $Shape<Props> => ({
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): $Shape<Props> => ({
-  logScreenView: (view: string, screen: string) => dispatch(logScreenViewAction(view, screen)),
   fetchPoolStats: (symbol: string) => dispatch(fetchPoolPrizeInfo(symbol)),
   estimateTransactions: (
     transactionDrafts: TransactionDraft[],

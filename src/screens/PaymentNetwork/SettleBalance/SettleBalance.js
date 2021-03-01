@@ -55,11 +55,7 @@ import {
   spacing,
   fontSizes,
 } from 'utils/variables';
-import {
-  formatFiat,
-  formatAmount,
-  groupAndSortByDate,
-} from 'utils/common';
+import { formatFiat, formatAmount, groupSectionsByDate } from 'utils/common';
 import { getRate } from 'utils/assets';
 import { getThemeColors } from 'utils/themes';
 
@@ -243,7 +239,7 @@ class SettleBalance extends React.Component<Props, State> {
     } = this.props;
     const { txToSettle } = this.state;
     const showSpinner = false; // !isFetched;
-    const formattedFeedData = groupAndSortByDate(availableToSettleTx, 0);
+    const formattedFeedData = groupSectionsByDate(availableToSettleTx, 0);
     return (
       <ContainerWithHeader
         headerProps={{ centerItems: [{ title: t('ppnContent.title.settleTransactionsScreen') }] }}

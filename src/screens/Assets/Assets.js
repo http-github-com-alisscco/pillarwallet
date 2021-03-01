@@ -44,7 +44,6 @@ import type { Dispatch, RootReducerState } from 'reducers/rootReducer';
 
 // actions
 import { fetchInitialAssetsAction } from 'actions/assetsActions';
-import { logScreenViewAction } from 'actions/analyticsActions';
 import { fetchAllCollectiblesDataAction } from 'actions/collectiblesActions';
 
 // constants
@@ -81,7 +80,6 @@ type Props = {
   badges: Badges,
   blockchainNetworks: Object[],
   activeAccount: ?Account,
-  logScreenView: (view: string, screen: string) => void,
   fetchAllCollectiblesData: () => void,
   useBiometrics: boolean,
   backupStatus: Object,
@@ -114,10 +112,7 @@ class AssetsScreen extends React.Component<Props, State> {
       fetchInitialAssets,
       fetchAllCollectiblesData,
       assets,
-      logScreenView,
     } = this.props;
-
-    logScreenView('View assets list', 'Assets');
 
     if (!Object.keys(assets).length) {
       fetchInitialAssets();
@@ -353,7 +348,6 @@ const combinedMapStateToProps = (state) => ({
 
 const mapDispatchToProps = (dispatch: Dispatch): $Shape<Props> => ({
   fetchInitialAssets: () => dispatch(fetchInitialAssetsAction()),
-  logScreenView: (view: string, screen: string) => dispatch(logScreenViewAction(view, screen)),
   fetchAllCollectiblesData: () => dispatch(fetchAllCollectiblesDataAction()),
 });
 
