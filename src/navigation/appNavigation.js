@@ -137,6 +137,7 @@ import LiquidityPoolsRemoveLiquidityReviewScreen from 'screens/LiquidityPools/Re
 import LiquidityPoolsClaimRewardsReviewScreen from 'screens/LiquidityPools/ClaimRewardsReview';
 import LiquidityPoolsScreen from 'screens/LiquidityPools/LiquidityPools';
 import LiquidityPoolsInfoScreen from 'screens/LiquidityPools/LiquidityPoolsInfo';
+import EtherspotUpgradeScreen from 'screens/EtherspotUpgrade';
 
 // components
 import RetryApiRegistration from 'components/RetryApiRegistration';
@@ -302,6 +303,7 @@ import {
   LIQUIDITY_POOLS_REMOVE_LIQUIDITY_REVIEW,
   LIQUIDITY_POOLS_CLAIM_REWARDS_REVIEW,
   LIQUIDITY_POOLS_INFO,
+  ARCHANOVA_TO_ETHERSPOT_UPGRADE,
 } from 'constants/navigationConstants';
 import { DARK_THEME } from 'constants/appSettingsConstants';
 
@@ -827,6 +829,7 @@ const AppFlowNavigation = createStackNavigator(
     [EXCHANGE_FLOW]: exchangeFlow,
     [RARI_FLOW]: rariFlow,
     [LIQUIDITY_POOLS_FLOW]: liquidityPoolsFlow,
+    [ARCHANOVA_TO_ETHERSPOT_UPGRADE]: EtherspotUpgradeScreen,
   },
   modalTransition,
 );

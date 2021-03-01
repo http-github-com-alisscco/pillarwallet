@@ -36,7 +36,11 @@ import { REMOTE_CONFIG } from 'constants/remoteConfigConstants';
 import { TX_CONFIRMED_STATUS } from 'constants/historyConstants';
 
 // actions
-import { addAccountAction, setActiveAccountAction } from 'actions/accountsActions';
+import {
+  addAccountAction,
+  removeAccountAction,
+  setActiveAccountAction,
+} from 'actions/accountsActions';
 import { saveDbAction } from 'actions/dbActions';
 import { fetchAssetsBalancesAction } from 'actions/assetsActions';
 import { fetchCollectiblesAction } from 'actions/collectiblesActions';
@@ -48,6 +52,7 @@ import {
 } from 'actions/transactionEstimateActions';
 import { checkUserENSNameAction } from 'actions/ensRegistryActions';
 import { setHistoryTransactionStatusByHashAction } from 'actions/historyActions';
+import { lockScreenAction } from 'actions/authActions';
 
 // services
 import etherspot from 'services/etherspot';
@@ -60,13 +65,21 @@ import Toast from 'components/Toast';
 import { normalizeWalletAddress } from 'utils/wallet';
 import { formatUnits, isCaseInsensitiveMatch, reportErrorLog } from 'utils/common';
 import { addressesEqual, getAssetData, getAssetsAsList, mapAssetToAssetData } from 'utils/assets';
-import { findFirstEtherspotAccount } from 'utils/accounts';
+import {
+  findFirstEtherspotAccount,
+  findFirstLegacySmartAccount,
+  getAccountAddress,
+} from 'utils/accounts';
 import { parseEtherspotTransactionState } from 'utils/etherspot';
 
 // selectors
 import { accountAssetsSelector } from 'selectors/assets';
 import { accountHistorySelector } from 'selectors/history';
-import { activeAccountAddressSelector, supportedAssetsSelector } from 'selectors';
+import {
+  accountsSelector,
+  activeAccountAddressSelector,
+  supportedAssetsSelector,
+} from 'selectors';
 import { preferredGasTokenSelector, useGasTokenSelector } from 'selectors/smartWallet';
 
 // types
@@ -203,6 +216,7 @@ export const importEtherspotAccountsAction = (privateKey: string) => {
     await Promise.all(etherspotAccounts.map((account) => {
       const accountExists = backendAccounts.some(({ ethAddress }) => addressesEqual(ethAddress, account.address));
       if (!accountExists) {
+        // TODO: change registerSmartWallet to Etherspot once available in SDK
         return api.registerSmartWallet({
           walletId,
           privateKey,
@@ -480,5 +494,22 @@ export const estimateTokenWithdrawFromAccountDepositTransactionAction = () => {
 export const checkEtherspotSessionAction = () => {
   return async () => {
     // TODO: add etherspot session restore?
+  };
+};
+
+export const upgradeToEtherspotAction = () => {
+  return async (dispatch: Dispatch, getState: GetState) => {
+    /**
+     * TODO: create etherspot account similar to importEtherspotAccountsAction
+     * and implement onchain migration method when it's developer,
+     * code below is a mock of archanova smart wallet migration
+     */
+
+    const smartWalletAccount = findFirstLegacySmartAccount(accountsSelector(getState()));
+    if (smartWalletAccount) {
+      dispatch(removeAccountAction(getAccountAddress(smartWalletAccount)));
+    }
+
+    dispatch(lockScreenAction());
   };
 };
