@@ -49,7 +49,7 @@ const supportedDomains = [
   'zil',
 ];
 
-export const isEnsName = (input: string): boolean => {
+export const isEnsName = (input: ?string): boolean => {
   if (!input || !input.toString().includes('.')) return false;
 
   const domain = input.split('.').pop().toLowerCase();

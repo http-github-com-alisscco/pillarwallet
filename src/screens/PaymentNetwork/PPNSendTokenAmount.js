@@ -17,20 +17,16 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import type { NavigationScreenProp } from 'react-navigation';
 import t from 'translations/translate';
-import isEmpty from 'lodash.isempty';
 
 // actions
-import { addContactAction } from 'actions/contactsActions';
 import { fetchAccountDepositBalanceAction } from 'actions/etherspotActions';
 
 // components
-import ContactDetailsModal from 'components/ContactDetailsModal';
-import Modal from 'components/Modal';
 import SendContainer from 'containers/SendContainer';
 import { Label } from 'components/Typography';
 
@@ -40,8 +36,6 @@ import { SEND_TOKEN_CONFIRM } from 'constants/navigationConstants';
 
 // utils
 import { getAssetData, getAssetsAsList } from 'utils/assets';
-import { isEnsName } from 'utils/validators';
-import { getContactWithEnsName } from 'utils/contacts';
 
 // selectors
 import { contactsSelector } from 'selectors';
@@ -52,7 +46,6 @@ import { availableStakeSelector } from 'selectors/paymentNetwork';
 import type { Dispatch } from 'reducers/rootReducer';
 import type { Assets, Balances } from 'models/Asset';
 import type { Contact } from 'models/Contact';
-import type { Option } from 'models/Selector';
 import type { TokenTransactionPayload } from 'models/Transaction';
 
 
@@ -61,7 +54,6 @@ type Props = {
   accountAssets: Assets,
   availableStake: number,
   contacts: Contact[],
-  addContact: (contact: Contact) => void,
   fetchAccountDepositBalance: () => void,
 };
 
@@ -70,7 +62,6 @@ const PPNSendTokenAmount = ({
   accountAssets,
   availableStake,
   contacts,
-  addContact,
   fetchAccountDepositBalance,
 }: Props) => {
   useEffect(() => {
@@ -80,7 +71,6 @@ const PPNSendTokenAmount = ({
   const [amount, setAmount] = useState(null);
   const [inputValid, setInputValid] = useState(false);
   const [selectedContact, setSelectedContact] = useState<?Contact>(null);
-  const [resolvingContactEnsName, setResolvingContactEnsName] = useState(false);
 
   const PPNAsset = getAssetData(getAssetsAsList(accountAssets), [], PPN_TOKEN);
 
@@ -113,85 +103,14 @@ const PPNSendTokenAmount = ({
     navigation.navigate(SEND_TOKEN_CONFIRM, { transactionPayload });
   };
 
-  const resolveAndSetContactAndFromOption = async (
-    value: Option,
-    setContact: (value: ?Contact) => void,
-    onSuccess?: () => void,
-  ): Promise<void> => {
-    const ethAddress = value?.ethAddress || '';
-    let contact = {
-      name: value?.name || '',
-      ethAddress,
-      ensName: null,
-    };
-
-    if (isEnsName(ethAddress)) {
-      setResolvingContactEnsName(true);
-      contact = await getContactWithEnsName(contact, ethAddress);
-      if (!contact?.ensName) {
-        // failed to resolve ENS, error toast will be shown
-        setResolvingContactEnsName(false);
-        return Promise.resolve();
-      }
-      setResolvingContactEnsName(false);
-    }
-
-    // if name still empty let's set it with address
-    if (isEmpty(contact.name)) contact = { ...contact, name: contact.ethAddress };
-
-    setContact(contact);
-
-    if (onSuccess) onSuccess();
-
-    return Promise.resolve();
-  };
-
-  const handleReceiverSelect = (value: Option, onSuccess?: () => void) => {
-    if (!value?.ethAddress) {
-      setSelectedContact(null);
-      if (onSuccess) onSuccess();
-    } else {
-      resolveAndSetContactAndFromOption(value, setSelectedContact, onSuccess);
-    }
-  };
-
-  const openAddToContacts = useCallback((initial: ?Contact) => {
-    Modal.open(() => (
-      <ContactDetailsModal
-        title={t('title.addNewContact')}
-        contact={initial}
-        onSave={(contact: Contact) => {
-          addContact(contact);
-          handleReceiverSelect({ ...contact, value: contact.ethAddress });
-        }}
-        contacts={contacts}
-        isDefaultNameEns
-      />
-    ));
-  }, [contacts, addContact, handleReceiverSelect]);
-
-  const contactsAsOptions = contacts.map((contact) => ({ ...contact, value: contact.ethAddress }));
-  const addContactButtonPress = (option: Option) => resolveAndSetContactAndFromOption(
-    option,
-    openAddToContacts,
-  );
-  const customOptionButtonOnPress = !resolvingContactEnsName
-    ? addContactButtonPress
-    : () => {};
-  const selectedOption: ?Option = selectedContact
-    ? { ...selectedContact, value: selectedContact.ethAddress }
-    : null;
-
   const accountDepositBalance: Balances = { [PPN_TOKEN]: { symbol: PPN_TOKEN, balance: availableStake.toString() } };
 
   return (
     <SendContainer
       customSelectorProps={{
-        onOptionSelect: !resolvingContactEnsName ? handleReceiverSelect : () => {},
-        options: contactsAsOptions,
-        selectedOption,
-        customOptionButtonLabel: t('button.addToContacts'),
-        customOptionButtonOnPress,
+        contacts,
+        selectedContact,
+        onSelectContact: setSelectedContact,
       }}
       customValueSelectorProps={{
         onValueChange: setAmount,
@@ -220,7 +139,6 @@ const structuredSelector = createStructuredSelector({
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): $Shape<Props> => ({
-  addContact: (contact: Contact) => dispatch(addContactAction(contact)),
   fetchAccountDepositBalance: () => dispatch(fetchAccountDepositBalanceAction()),
 });
 

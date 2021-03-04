@@ -355,6 +355,12 @@ export const getEthereumProvider = (network: string) => {
   return new providers.FallbackProvider([infuraProvider, etherscanProvider]);
 };
 
+export const resolveEnsName = async (ensName: string): Promise<?string> => {
+  const resolved = await etherspot.getENSNode(ensName);
+
+  return resolved?.address;
+};
+
 export const lookupAddress = async (address: string): Promise<?string> => {
   const resolved = await etherspot.getENSNode(address);
 

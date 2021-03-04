@@ -29,7 +29,7 @@ import type { Contact } from 'models/Contact';
 import etherspot from 'services/etherspot';
 
 // utils
-import { reportLog } from './common';
+import { reportLog, resolveEnsName } from './common';
 import { isValidAddress, isEnsName } from './validators';
 
 type ResolveContactOptions = {|
