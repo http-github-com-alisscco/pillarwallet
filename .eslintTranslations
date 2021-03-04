@@ -176,6 +176,7 @@
         "strokeLineCap",
         "strokeLinecap",
         "swipeDirection",
+        "testID",
         "underlineColorAndroid",
         "url",
         "viewBox",

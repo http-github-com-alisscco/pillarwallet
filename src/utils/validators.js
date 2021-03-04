@@ -50,32 +50,30 @@ const supportedDomains = [
 ];
 
 export const isEnsName = (input: string): boolean => {
-  if (!input.toString().includes('.')) return false;
+  if (!input || !input.toString().includes('.')) return false;
 
   const domain = input.split('.').pop().toLowerCase();
 
   return supportedDomains.includes(domain);
 };
 
-export const isValidETHAddress = (address: string): boolean => {
-  let result = true;
+export const isValidAddress = (input: ?string): boolean => {
+  if (!input) return false;
+
   try {
-    utils.getAddress(address);
+    utils.getAddress(input);
+    return true;
   } catch (e) {
-    result = false;
+    return false;
   }
-  if (!result && isEnsName(address)) {
-    result = true;
-  }
-  return result;
 };
 
-export const isValidAddress = (address: string): boolean => {
-  return isValidETHAddress(address);
+export const isValidAddressOrEnsName = (input: ?string): boolean => {
+  return isEnsName(input) || isValidAddress(input);
 };
 
 export const supportedAddressValidator = (address: string): boolean => {
-  if (pipe(decodeETHAddress, isValidETHAddress)(address)) {
+  if (pipe(decodeETHAddress, isValidAddressOrEnsName)(address)) {
     return true;
   }
   return false;
@@ -84,7 +82,7 @@ export const supportedAddressValidator = (address: string): boolean => {
 export const addressValidator = (token: string): AddressValidator => {
   const validators = {
     [ETH]: {
-      validator: isValidETHAddress,
+      validator: isValidAddressOrEnsName,
       message: t('auth:error.invalidEthereumAddress.default'),
     },
   };
@@ -95,7 +93,7 @@ export const addressValidator = (token: string): AddressValidator => {
   }
 
   return {
-    validator: isValidAddress,
+    validator: isValidAddressOrEnsName,
     message: t('auth:error.invalidAddress.default'),
   };
 };
