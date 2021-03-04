@@ -82,6 +82,8 @@ class EtherspotService {
   }
 
   subscribe(callback: (notification: EtherspotNotification) => Promise<void>) {
+    if (!this.sdk) return;
+
     this.subscription = this.sdk.notifications$
       .pipe(map(callback))
       .subscribe();
