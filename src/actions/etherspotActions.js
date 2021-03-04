@@ -507,7 +507,7 @@ export const upgradeToEtherspotAction = () => {
 
     const smartWalletAccount = findFirstLegacySmartAccount(accountsSelector(getState()));
     if (smartWalletAccount) {
-      dispatch(removeAccountAction(getAccountAddress(smartWalletAccount)));
+      await dispatch(removeAccountAction(getAccountAddress(smartWalletAccount)));
     }
 
     dispatch(lockScreenAction());
