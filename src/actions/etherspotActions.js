@@ -64,7 +64,7 @@ import Toast from 'components/Toast';
 // utils
 import { normalizeWalletAddress } from 'utils/wallet';
 import { formatUnits, isCaseInsensitiveMatch, reportErrorLog } from 'utils/common';
-import { addressesEqual, getAssetData, getAssetsAsList, mapAssetToAssetData } from 'utils/assets';
+import { getAssetData, getAssetsAsList, mapAssetToAssetData } from 'utils/assets';
 import {
   findFirstEtherspotAccount,
   findFirstLegacySmartAccount,
@@ -171,7 +171,7 @@ export const setEtherspotAccountsAction = (accounts: EtherspotAccount[]) => {
   };
 };
 
-export const importEtherspotAccountsAction = (privateKey: string) => {
+export const importEtherspotAccountsAction = () => {
   return async (dispatch: Dispatch, getState: GetState, api: SDKWrapper) => {
     const {
       session: { data: session },
@@ -190,6 +190,13 @@ export const importEtherspotAccountsAction = (privateKey: string) => {
       return;
     }
 
+    const { walletId } = user;
+
+    if (!walletId) {
+      reportErrorLog('importEtherspotAccountsAction failed: no walletId', { user });
+      return;
+    }
+
     const etherspotAccounts = await etherspot.getAccounts();
     if (!etherspotAccounts) {
       // Note: there should be always at least one account, it syncs on Etherspot SDK init, otherwise it's failure
@@ -199,43 +206,11 @@ export const importEtherspotAccountsAction = (privateKey: string) => {
 
     await dispatch(setEtherspotAccountsAction(etherspotAccounts));
 
-    const { walletId } = user;
-
-    if (!walletId) {
-      reportErrorLog('importEtherspotAccountsAction failed: no walletId', { user });
-      return;
-    }
-
-    const backendAccounts = await api.listAccounts(walletId);
-    if (!backendAccounts) {
-      reportErrorLog('importEtherspotAccountsAction failed: no backendAccounts', { walletId });
-      return;
-    }
-
-    // sync accounts with Pillar backend
-    await Promise.all(etherspotAccounts.map((account) => {
-      const accountExists = backendAccounts.some(({ ethAddress }) => addressesEqual(ethAddress, account.address));
-      if (!accountExists) {
-        // TODO: change registerSmartWallet to Etherspot once available in SDK
-        return api.registerSmartWallet({
-          walletId,
-          privateKey,
-          ethAddress: account.address,
-          fcmToken: session?.fcmToken,
-        }).catch((error) => {
-          reportErrorLog('importEtherspotAccountsAction api.registerSmartWallet failed', { error });
-          return Promise.resolve();
-        });
-      }
-      return Promise.resolve();
-    }));
-
     // sync accounts with app
     await Promise.all(etherspotAccounts.map((etherspotAccount) => dispatch(addAccountAction(
       etherspotAccount.address,
       ACCOUNT_TYPES.ETHERSPOT_SMART_WALLET,
       etherspotAccount, // full object as extras
-      backendAccounts,
     ))));
 
     // set active
@@ -251,6 +226,7 @@ export const importEtherspotAccountsAction = (privateKey: string) => {
     });
 
     const assets = { [accountId]: initialAssets };
+
     dispatch(saveDbAction('assets', { assets }, true));
     dispatch(fetchAssetsBalancesAction());
     dispatch(fetchCollectiblesAction());

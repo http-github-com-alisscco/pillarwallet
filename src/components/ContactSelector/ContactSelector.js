@@ -17,7 +17,6 @@
     with this program; if not, write to the Free Software Foundation, Inc.,
     51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
-/* eslint-disable no-unused-expressions */
 
 import React from 'react';
 import styled from 'styled-components/native';
@@ -106,8 +105,7 @@ const ContactSelector = ({
       );
     }
 
-    let { name } = selectedContact;
-
+    let name = selectedContact.name || selectedContact.ensName || selectedContact.ethAddress;
     if (isValidAddress(name)) {
       name = t('ellipsedMiddleString', {
         stringStart: name.slice(0, 6),
@@ -117,7 +115,7 @@ const ContactSelector = ({
 
     return (
       <SelectedOption>
-        <ProfileImage userName={name} diameter={16} noShadow borderWidth={0} initialsSize={10} />
+        <ProfileImage userName={name} diameter={16} borderWidth={0} />
         <Spacing w={8} />
         <MediumText medium>{name}</MediumText>
       </SelectedOption>

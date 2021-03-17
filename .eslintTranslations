@@ -140,6 +140,7 @@
         "androidVariant",
         "animationIn",
         "animationOut",
+        "autoCapitalize",
         "backgroundColor",
         "contentAlign",
         "ellipsizeMode",

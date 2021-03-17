@@ -33,7 +33,6 @@ import {
   SET_SMART_WALLET_SDK_INIT,
   SET_SMART_WALLET_ACCOUNTS,
   SET_SMART_WALLET_CONNECTED_ACCOUNT,
-  SET_SMART_WALLET_ACCOUNT_ENS,
   SET_SMART_WALLET_UPGRADE_STATUS,
   SMART_WALLET_UPGRADE_STATUSES,
   SET_SMART_WALLET_DEPLOYMENT_DATA,
@@ -43,15 +42,15 @@ import {
   RESET_SMART_WALLET_DEPLOYMENT,
   PAYMENT_COMPLETED,
   PAYMENT_PROCESSED,
-  SMART_WALLET_SWITCH_TO_GAS_TOKEN_RELAYER,
   ADD_SMART_WALLET_CONNECTED_ACCOUNT_DEVICE,
-  SMART_WALLET_ACCOUNT_DEVICE_REMOVED,
   SMART_WALLET_ACCOUNT_DEVICE_ADDED,
-  SET_GETTING_SMART_WALLET_DEPLOYMENT_ESTIMATE,
-  SET_SMART_WALLET_DEPLOYMENT_ESTIMATE,
+  SMART_WALLET_ACCOUNT_DEVICE_REMOVED,
 } from 'constants/smartWalletConstants';
-import { ACCOUNT_TYPES, UPDATE_ACCOUNTS } from 'constants/accountsConstants';
-import { ETH, SET_INITIAL_ASSETS } from 'constants/assetsConstants';
+import {
+  ACCOUNT_TYPES,
+  UPDATE_ACCOUNTS,
+} from 'constants/accountsConstants';
+import { ETH } from 'constants/assetsConstants';
 import {
   TX_CONFIRMED_STATUS,
   SET_HISTORY,
@@ -67,6 +66,7 @@ import {
   PAYMENT_NETWORK_TX_SETTLEMENT,
   MARK_PLR_TANK_INITIALISED,
   RESET_ESTIMATED_SETTLE_TX_FEE,
+  PAYMENT_NETWORK_UNSUBSCRIBE_TX_STATUS,
 } from 'constants/paymentNetworkConstants';
 import { PIN_CODE } from 'constants/navigationConstants';
 import { DEVICE_CATEGORIES } from 'constants/connectedDevicesConstants';
@@ -76,7 +76,7 @@ import { SABLIER_WITHDRAW, SABLIER_CANCEL_STREAM } from 'constants/sablierConsta
 import { PPN_TOKEN } from 'configs/assetsConfig';
 
 // services
-import smartWalletService, { formatEstimated, parseEstimatePayload } from 'services/smartWallet';
+import smartWalletService from 'services/smartWallet';
 import Storage from 'services/storage';
 import { navigate } from 'services/navigation';
 import aaveService from 'services/aave';
@@ -101,13 +101,12 @@ import type SDKWrapper from 'services/api';
 // utils
 import { buildHistoryTransaction, updateAccountHistory, updateHistoryRecord } from 'utils/history';
 import {
-  findAccountById,
   findFirstLegacySmartAccount,
   getActiveAccountAddress,
   getActiveAccountId,
-  normalizeForEns,
   getAccountId,
   getAccountAddress,
+  findAccountById,
 } from 'utils/accounts';
 import {
   isSmartWalletDeviceDeployed,
@@ -131,13 +130,11 @@ import {
   reportErrorLog,
   reportLog,
 } from 'utils/common';
-import { normalizeWalletAddress } from 'utils/wallet';
 
 // actions
 import { addAccountAction, setActiveAccountAction } from './accountsActions';
 import { saveDbAction } from './dbActions';
 import { fetchAssetsBalancesAction, fetchInitialAssetsAction } from './assetsActions';
-import { fetchCollectiblesAction } from './collectiblesActions';
 import {
   fetchTransactionsHistoryAction,
   insertTransactionAction,
@@ -209,6 +206,10 @@ export const loadSmartWalletAccountsAction = (privateKey?: string) => {
       );
     }
     const backendAccounts = await api.listAccounts(user.walletId);
+    if (!backendAccounts) {
+      reportLog('Unable to load Archanova Smart Wallet accounts: no backend accounts');
+      return;
+    }
 
     const accountsPromises = smartAccounts.map(async account => {
       return dispatch(addAccountAction(account.address, ACCOUNT_TYPES.LEGACY_SMART_WALLET, account, backendAccounts));
@@ -267,10 +268,7 @@ export const fetchConnectedAccountAction = () => {
   };
 };
 
-export const connectSmartWalletAccountAction = (
-  accountId: string,
-  setAccountActive: boolean = true,
-) => {
+export const connectSmartWalletAccountAction = (accountId: string) => {
   return async (dispatch: Dispatch, getState: GetState) => {
     if (!smartWalletService || !smartWalletService.sdkInitialized) return;
     let { smartWallet: { connectedAccount } } = getState();
@@ -288,8 +286,6 @@ export const connectSmartWalletAccountAction = (
       }
       dispatch(setSmartWalletConnectedAccount(connectedAccount));
     }
-
-    if (setAccountActive) dispatch(setActiveAccountAction(accountId));
 
     // sync deployed account state
     const connectedAccountState = connectedAccount?.state;
@@ -574,7 +570,7 @@ export const onSmartWalletSdkEventAction = (event: Object) => {
       if (!ACCOUNT_TRANSACTION_UPDATED) path = 'sdkModules.Api.EventNames.AccountTransactionUpdated';
       if (!TRANSACTION_COMPLETED) path = 'sdkConstants.AccountTransactionStates.Completed';
       /* eslint-enable i18next/no-literal-string */
-      reportLog('Missing Smart Wallet SDK constant', { path });
+      reportLog('Missing Archanova Smart Wallet SDK constant', { path });
     }
 
     /**
@@ -638,7 +634,7 @@ export const onSmartWalletSdkEventAction = (event: Object) => {
     if (event.name === ACCOUNT_TRANSACTION_UPDATED) {
       const {
         accounts: { data: accounts },
-        // paymentNetwork: { txToListen },
+        paymentNetwork: { txToListen },
         wallet: { data: walletData },
         assets: { supportedAssets },
       } = getState();
@@ -646,12 +642,12 @@ export const onSmartWalletSdkEventAction = (event: Object) => {
       const activeAccountAddress = getActiveAccountAddress(accounts);
       const txHash = get(event, 'payload.hash', '').toLowerCase();
       const txStatus = get(event, 'payload.state', '');
-      // const txGasInfo = get(event, 'payload.gas', {});
+      const txGasInfo = get(event, 'payload.gas', {});
       const txSenderAddress = get(event, 'payload.from.account.address', '');
       const txReceiverAddress = get(event, 'payload.to.address', '');
       const txSenderEnsName = get(event, 'payload.from.account.ensName', '');
       const txType = get(event, 'payload.transactionType', '');
-      // const txToListenFound = txToListen.find(hash => isCaseInsensitiveMatch(hash, txHash));
+      const txToListenFound = txToListen.find(hash => isCaseInsensitiveMatch(hash, txHash));
       const skipNotifications = [transactionTypes.TopUpErc20Approve];
 
       const txFromHistory = currentHistory[activeAccountAddress].find(tx => tx.hash === txHash);
@@ -730,33 +726,34 @@ export const onSmartWalletSdkEventAction = (event: Object) => {
             });
           }
 
-          // if (txToListenFound) {
-          //   const { txUpdated, updatedHistory } = updateHistoryRecord(
-          //     currentHistory,
-          //     txHash,
-          //     (transaction) => ({
-          //       ...transaction,
-          //       gasPrice: txGasInfo.price ? txGasInfo.price.toNumber() : transaction.gasPrice,
-          //       gasUsed: txGasInfo.used ? txGasInfo.used.toNumber() : transaction.gasUsed,
-          //       status: TX_CONFIRMED_STATUS,
-          //     }));
-          //
-          //   if (txUpdated) {
-          //     dispatch(saveDbAction('history', { history: updatedHistory }, true));
-          //     dispatch({
-          //       type: SET_HISTORY,
-          //       payload: updatedHistory,
-          //     });
-          //     dispatch(afterHistoryUpdatedAction());
-          //     dispatch({
-          //       type: PAYMENT_NETWORK_UNSUBSCRIBE_TX_STATUS,
-          //       payload: txHash,
-          //     });
-          //     currentHistory = getState().history.data;
-          //   }
-          // } else {
-          dispatch(fetchTransactionsHistoryAction());
-          // }
+          if (txToListenFound) {
+            const { txUpdated, updatedHistory } = updateHistoryRecord(
+              currentHistory,
+              txHash,
+              (transaction) => ({
+                ...transaction,
+                gasPrice: txGasInfo.price ? txGasInfo.price.toNumber() : transaction.gasPrice,
+                gasUsed: txGasInfo.used ? txGasInfo.used.toNumber() : transaction.gasUsed,
+                status: TX_CONFIRMED_STATUS,
+              }));
+
+            if (txUpdated) {
+              dispatch(saveDbAction('history', { history: updatedHistory }, true));
+              dispatch({
+                type: SET_HISTORY,
+                payload: updatedHistory,
+              });
+              dispatch(afterHistoryUpdatedAction());
+              dispatch({
+                type: PAYMENT_NETWORK_UNSUBSCRIBE_TX_STATUS,
+                payload: txHash,
+              });
+              currentHistory = getState().history.data;
+            }
+          } else {
+            dispatch(fetchTransactionsHistoryAction());
+          }
+
           dispatch(fetchAssetsBalancesAction());
         }
       }
@@ -1047,73 +1044,6 @@ export const settleTransactionsAction = (txToSettle: TxToSettle[], payForGasWith
   };
 };
 
-export const importSmartWalletAccountsAction = (privateKey: string) => {
-  return async (dispatch: Dispatch, getState: GetState, api: Object) => {
-    await dispatch(initSmartWalletSdkAction(privateKey));
-
-    if (!smartWalletService || !smartWalletService.sdkInitialized) return;
-
-    const {
-      session: { data: session },
-      user: { data: user },
-    } = getState();
-
-    if (!user.username) {
-      reportErrorLog('importSmartWalletAccountsAction failed: no username', { user });
-      return;
-    }
-
-    const smartAccounts = await smartWalletService.getAccounts();
-    if (isEmpty(smartAccounts)) {
-      const newSmartAccount = await smartWalletService.createAccount(user.username);
-      if (newSmartAccount) smartAccounts.push(newSmartAccount);
-    }
-    dispatch({
-      type: SET_SMART_WALLET_ACCOUNTS,
-      payload: smartAccounts,
-    });
-    await dispatch(saveDbAction('smartWallet', { accounts: smartAccounts }));
-
-    if (!user.walletId) {
-      reportErrorLog('importSmartWalletAccountsAction failed: no walletId', { user });
-      return;
-    }
-
-    // register missed accounts on the backend
-    await smartWalletService.syncSmartAccountsWithBackend(
-      api,
-      smartAccounts,
-      user.walletId,
-      privateKey,
-      session.fcmToken,
-    );
-    const backendAccounts = await api.listAccounts(user.walletId);
-
-    const newAccountsPromises = smartAccounts.map(async account => {
-      return dispatch(addAccountAction(account.address, ACCOUNT_TYPES.LEGACY_SMART_WALLET, account, backendAccounts));
-    });
-    await Promise.all(newAccountsPromises);
-
-    if (!isEmpty(smartAccounts)) {
-      const accountId = normalizeWalletAddress(smartAccounts[0].address);
-      await dispatch(connectSmartWalletAccountAction(accountId));
-      // set default assets for smart wallet
-      const initialAssets = await api.fetchInitialAssets(user.walletId);
-      await dispatch({
-        type: SET_INITIAL_ASSETS,
-        payload: {
-          accountId,
-          assets: initialAssets,
-        },
-      });
-      const assets = { [accountId]: initialAssets };
-      dispatch(saveDbAction('assets', { assets }, true));
-      dispatch(fetchAssetsBalancesAction());
-      dispatch(fetchCollectiblesAction());
-    }
-  };
-};
-
 export const addSmartWalletAccountDeviceAction = (deviceAddress: string, payWithGasToken: boolean) => {
   return async (dispatch: Dispatch, getState: GetState) => {
     await dispatch(fetchConnectedAccountAction());
@@ -1210,68 +1140,6 @@ export const removeDeployedSmartWalletAccountDeviceAction = (deviceAddress: stri
   };
 };
 
-export const setSmartWalletEnsNameAction = (username: string) => {
-  return async (dispatch: Dispatch, getState: GetState) => {
-    if (!smartWalletService || !smartWalletService.sdkInitialized) return;
-    const { accounts: { data: accounts } } = getState();
-    const smartWalletAccount = findFirstLegacySmartAccount(accounts);
-    if (!smartWalletAccount) return;
-    const accountId = getAccountId(smartWalletAccount);
-    const accountAddress = getAccountAddress(smartWalletAccount);
-    const normalizedUsername = normalizeForEns(username);
-
-    const hash = await smartWalletService.setAccountEnsName(username);
-    if (!hash) return;
-
-    const historyTx = buildHistoryTransaction({
-      from: accountAddress,
-      hash,
-      to: accountAddress,
-      value: '0',
-      asset: ETH,
-      tag: SET_SMART_WALLET_ACCOUNT_ENS,
-      extra: {
-        ensName: normalizedUsername,
-      },
-    });
-    dispatch(insertTransactionAction(historyTx, accountId));
-  };
-};
-
-export const switchToGasTokenRelayerAction = () => {
-  return async (dispatch: Dispatch, getState: GetState) => {
-    if (!smartWalletService || !smartWalletService.sdkInitialized) return;
-
-    const { accounts: { data: accounts } } = getState();
-    const smartWalletAccount = findFirstLegacySmartAccount(accounts);
-    if (!smartWalletAccount) return;
-    const accountId = getAccountId(smartWalletAccount);
-    const accountAddress = getAccountAddress(smartWalletAccount);
-
-    const hash = await smartWalletService.switchToGasTokenRelayer();
-    if (!hash) {
-      Toast.show({
-        message: t('toast.switchRelayerTokenFailed'),
-        emoji: 'hushed',
-        supportLink: true,
-        autoClose: false,
-      });
-      return;
-    }
-
-    const historyTx = buildHistoryTransaction({
-      from: accountAddress,
-      hash,
-      to: accountAddress,
-      value: '0',
-      asset: ETH,
-      tag: SMART_WALLET_SWITCH_TO_GAS_TOKEN_RELAYER,
-    });
-    dispatch(insertTransactionAction(historyTx, accountId));
-    dispatch(fetchConnectedAccountAction());
-  };
-};
-
 export const checkIfSmartWalletWasRegisteredAction = (privateKey: string, smartWalletAccountId: string) => {
   return async (dispatch: Dispatch, getState: GetState, api: SDKWrapper) => {
     const {
@@ -1302,22 +1170,21 @@ export const checkIfSmartWalletWasRegisteredAction = (privateKey: string, smartW
     });
 
     if (result?.error) {
-      reportLog('Unable to register smart wallet', { reason: result.reason });
+      reportLog('Unable to register Archanova Smart Wallet', { reason: result.reason });
       return;
     }
 
     // validate the account was registered correctly
     const backendAccounts = await api.listAccounts(walletId);
-
     if (!backendAccounts) {
-      reportLog('Unable to register smart wallet: no backendAccounts', { smartWalletAccountId });
+      reportLog('Unable to register Archanova Smart Wallet: no backend accounts', { walletId });
       return;
     }
 
     const registeredAccount = backendAccounts.find(({ ethAddress }) => addressesEqual(ethAddress, accountAddress));
 
     if (!registeredAccount || !registeredAccount.walletId) {
-      reportLog('Unable to register smart wallet', { smartWalletAccountId });
+      reportLog('Unable to register Archanova Smart Wallet', { smartWalletAccountId });
       return;
     }
 
@@ -1334,27 +1201,6 @@ export const checkIfSmartWalletWasRegisteredAction = (privateKey: string, smartW
     dispatch(saveDbAction('accounts', { accounts: updatedAccounts }, true));
   };
 };
-
-export const estimateSmartWalletDeploymentAction = () => {
-  return async (dispatch: Dispatch) => {
-    dispatch({ type: SET_GETTING_SMART_WALLET_DEPLOYMENT_ESTIMATE, payload: true });
-
-    const rawEstimate = await smartWalletService
-      .estimateAccountDeployment()
-      .catch((error) => {
-        reportErrorLog('estimateAccountDeployment failed', { error });
-        return null;
-      });
-
-    const estimated = {
-      raw: rawEstimate,
-      formatted: formatEstimated(parseEstimatePayload(rawEstimate)),
-    };
-
-    dispatch({ type: SET_SMART_WALLET_DEPLOYMENT_ESTIMATE, payload: estimated });
-  };
-};
-
 
 /**
  * should recover from 2 reported scenarios:

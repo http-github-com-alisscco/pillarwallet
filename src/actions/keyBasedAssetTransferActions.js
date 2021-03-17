@@ -51,7 +51,7 @@ import { fetchGasInfoAction } from 'actions/historyActions';
 // utils
 import { addressesEqual, getAssetsAsList, getBalance, transformBalancesToObject } from 'utils/assets';
 import { formatFullAmount, getGasPriceWei, reportErrorLog, reportLog } from 'utils/common';
-import { findFirstLegacySmartAccount, getAccountAddress } from 'utils/accounts';
+import { findFirstEtherspotAccount, getAccountAddress } from 'utils/accounts';
 import { calculateETHTransactionAmountAfterFee } from 'utils/transactions';
 
 // services
@@ -247,8 +247,8 @@ export const calculateKeyBasedAssetsToTransferTransactionGasAction = () => {
       return;
     }
 
-    const firstSmartAccount = findFirstLegacySmartAccount(accounts);
-    if (!firstSmartAccount) {
+    const firstEtherspotAccount = findFirstEtherspotAccount(accounts);
+    if (!firstEtherspotAccount) {
       reportLog('Failed to find smart wallet account in key based estimate calculations.');
       return;
     }
@@ -266,7 +266,7 @@ export const calculateKeyBasedAssetsToTransferTransactionGasAction = () => {
         const estimateTransaction = buildAssetTransferTransaction(assetData, {
           amount: draftAmount,
           from: keyBasedWalletAddress,
-          to: getAccountAddress(firstSmartAccount),
+          to: getAccountAddress(firstEtherspotAccount),
         });
         const gasLimit = await calculateGasEstimate(estimateTransaction);
         return {
@@ -310,7 +310,7 @@ export const calculateKeyBasedAssetsToTransferTransactionGasAction = () => {
         const estimateTransaction = buildAssetTransferTransaction(ethTransfer.assetData, {
           amount: adjustedEthTransferAmount,
           from: keyBasedWalletAddress,
-          to: getAccountAddress(firstSmartAccount),
+          to: getAccountAddress(firstEtherspotAccount),
         });
         const gasLimit = await calculateGasEstimate(estimateTransaction);
         const adjustedEthTransfer = {
@@ -404,8 +404,8 @@ export const createKeyBasedAssetsToTransferTransactionsAction = (wallet: Wallet)
     if (creatingTransactions) return;
     dispatch({ type: SET_CREATING_KEY_BASED_ASSET_TRANSFER_TRANSACTIONS, payload: true });
 
-    const firstSmartAccount = findFirstLegacySmartAccount(accounts);
-    if (!firstSmartAccount) {
+    const firstEtherspotAccount = findFirstEtherspotAccount(accounts);
+    if (!firstEtherspotAccount) {
       reportLog('Failed to find smart wallet account in key based asset transfer creation.');
       return;
     }
@@ -421,7 +421,7 @@ export const createKeyBasedAssetsToTransferTransactionsAction = (wallet: Wallet)
     const cryptoWallet = new CryptoWallet(wallet.privateKey, keyBasedAccount);
     const walletProvider = await cryptoWallet.getProvider();
 
-    // sync local nonce
+    // sync local nonce, TODO: etherspot nonce?
     const transactionCount = await walletProvider.getTransactionCount(keyBasedWalletAddress);
     dispatch({
       type: UPDATE_TX_COUNT,
@@ -439,7 +439,7 @@ export const createKeyBasedAssetsToTransferTransactionsAction = (wallet: Wallet)
     for (const keyBasedAssetTransfer of keyBasedAssetsToTransfer) { // eslint-disable-line
       const signedTransaction = await signKeyBasedAssetTransferTransaction( // eslint-disable-line
         keyBasedWalletAddress,
-        getAccountAddress(firstSmartAccount),
+        getAccountAddress(firstEtherspotAccount),
         keyBasedAssetTransfer,
         walletProvider,
         keyBasedAccount,

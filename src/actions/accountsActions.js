@@ -28,9 +28,16 @@ import { fetchCollectiblesAction } from 'actions/collectiblesActions';
 import { saveDbAction } from 'actions/dbActions';
 import { fetchTransactionsHistoryAction } from 'actions/historyActions';
 import { setActiveBlockchainNetworkAction } from 'actions/blockchainNetworkActions';
+import {
+  checkIfSmartWalletWasRegisteredAction,
+  connectSmartWalletAccountAction,
+  initSmartWalletSdkAction,
+  fetchVirtualAccountBalanceAction,
+} from 'actions/smartWalletActions';
 
 // utils
 import { reportErrorLog } from 'utils/common';
+import { findFirstLegacySmartAccount, getAccountId } from 'utils/accounts';
 
 // types
 import type { AccountExtra, AccountTypes } from 'models/Account';
@@ -129,5 +136,28 @@ export const switchAccountAction = (accountId: string) => {
     dispatch(checkForMissedAssetsAction());
 
     dispatch({ type: CHANGING_ACCOUNT, payload: false });
+  };
+};
+
+export const initOnLoginSmartWalletAccountAction = (privateKey: string) => {
+  return async (dispatch: Dispatch, getState: GetState) => {
+    const {
+      accounts: { data: accounts },
+      user: { data: user },
+    } = getState();
+
+    const smartWalletAccount = findFirstLegacySmartAccount(accounts);
+    if (!smartWalletAccount) return;
+
+    const smartWalletAccountId = getAccountId(smartWalletAccount);
+    await dispatch(initSmartWalletSdkAction(privateKey, true));
+
+    await dispatch(connectSmartWalletAccountAction(smartWalletAccountId));
+    dispatch(fetchVirtualAccountBalanceAction());
+
+    // following code should not be done if user is not registered on back-end
+    if (!user?.walletId) return;
+
+    dispatch(checkIfSmartWalletWasRegisteredAction(privateKey, smartWalletAccountId));
   };
 };

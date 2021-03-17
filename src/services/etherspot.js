@@ -48,6 +48,7 @@ import {
 } from 'utils/common';
 import { mapToEtherspotTransactionsBatch } from 'utils/etherspot';
 import { addressesEqual } from 'utils/assets';
+import { isProdEnv } from 'utils/environment';
 
 // constants
 import { ETH } from 'constants/assetsConstants';
@@ -65,12 +66,14 @@ class EtherspotService {
   sdk: EtherspotSdk;
   subscription: any;
 
-  async init(privateKey: string) {
-    const networkName = getEnv().NETWORK_PROVIDER === 'homestead'
+  async init(privateKey: string): Promise<void> {
+    const isMainnet = isProdEnv();
+
+    const networkName = isMainnet
       ? NetworkNames.Mainnet
       : NetworkNames.Kovan;
 
-    const envName = getEnv().NETWORK_PROVIDER === 'homestead'
+    const envName = isMainnet
       ? EnvNames.MainNets
       : EnvNames.TestNets;
 
@@ -321,7 +324,7 @@ class EtherspotService {
     return `${getEnv().TX_DETAILS_URL}${transactionHash}`;
   }
 
-  async logout() {
+  async logout(): Promise<void> {
     if (!this.sdk) return; // not initialized, nothing to do
 
     await this.sdk.destroy();

@@ -27,11 +27,20 @@ import {
   SET_PAYMENT_CHANNELS,
 } from 'constants/paymentNetworkConstants';
 
+// types
+import type { Balances } from 'models/Asset';
+
 
 export type PaymentNetworkReducerState = {
   availableStake: number,
   paymentChannels: P2PPaymentChannel[],
   isTankInitialised: boolean,
+  txToListen: string[],
+  availableToSettleTx: {
+    data: Object[],
+    isFetched: boolean,
+  },
+  balances: Balances,
 };
 
 export type PaymentNetworkAction = {
@@ -43,6 +52,12 @@ export const initialState = {
   availableStake: 0,
   paymentChannels: [],
   isTankInitialised: false,
+  txToListen: [],
+  availableToSettleTx: {
+    data: [],
+    isFetched: false,
+  },
+  balances: {},
 };
 
 export default function paymentNetworkReducer(

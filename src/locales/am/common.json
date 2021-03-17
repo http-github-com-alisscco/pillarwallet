@@ -937,30 +937,6 @@
     }
   },
 
-  "relayerMigrationContent": {
-    "modal": {
-      "switch": {
-        "title": "የግብይቱን ዋጋ በፒላር አድርግ",
-        "paragraph": "ኢት ደህና ሰንብት! ከለውጡ በኋላ የግብይቱን ክፍያ በፒላር ቶክን ማድረግ ይችላሉ። በቂ ያልሆነ ነዳጅ ማለት ቀረ።",
-        "button": {
-          "switch": "መቀየሪያ"
-        },
-        "label": {
-          "freeSwitching": "መቀየር ነፃ ነው",
-          "switchPending": "የቅየራ ግብይቱ በመጠባበቅ ላይ ነው",
-          "waitingForConfirmation": "ማረጋገጫ በመጠበቅ ላይ"
-        }
-      },
-      "verification": {
-        "title": {
-          "email": "የማረጋገጫ ቁልፍ ያስገቡ (ኢሜል)",
-          "phone": "የማረጋገጫ ቁልፍ ያስገቡ (ኤስኤምኤስ)"
-        },
-        "error": "አልሰራም፡ እባክዎ በድጋሚ ይሞክሩ"
-      }
-    }
-  },
-
   "addressBookContent": {
     "title": {
       "allowAccess": "የአድራሻ ማህደር ውስጥ ለመግባት"

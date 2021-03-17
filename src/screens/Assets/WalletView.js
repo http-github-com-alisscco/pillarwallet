@@ -36,8 +36,6 @@ import { ListItemChevron } from 'components/ListItem/ListItemChevron';
 import { LabelBadge } from 'components/LabelBadge';
 import CollectiblesList from 'components/CollectiblesList';
 
-import { spacing } from 'utils/variables';
-
 import { TOKENS, COLLECTIBLES, defaultFiatCurrency } from 'constants/assetsConstants';
 import { SERVICES, ASSET_SEARCH, COLLECTIBLE } from 'constants/navigationConstants';
 
@@ -236,8 +234,6 @@ class WalletView extends React.Component<Props, State> {
               }
               onSearchChange={this.handleSearchChange}
               wrapperStyle={{
-                paddingHorizontal: spacing.layoutSides,
-                paddingVertical: spacing.mediumLarge,
                 marginBottom: searchMarginBottom,
               }}
               onSearchFocus={() => this.setState({ hideInsightForSearch: true })}

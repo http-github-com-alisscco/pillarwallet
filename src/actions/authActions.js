@@ -41,12 +41,12 @@ import {
   HOME,
   PIN_CODE_UNLOCK,
   LOGOUT_PENDING,
-  ARCHANOVA_TO_ETHERSPOT_UPGRADE,
 } from 'constants/navigationConstants';
 import { SET_USER, UPDATE_USER } from 'constants/userConstants';
 import { RESET_APP_STATE } from 'constants/authConstants';
 import { UPDATE_SESSION } from 'constants/sessionConstants';
 import { SET_CACHED_URLS } from 'constants/cacheConstants';
+import { ACCOUNT_TYPES } from 'constants/accountsConstants';
 
 // utils
 import { delay, reportLog, reportOrWarn } from 'utils/common';
@@ -59,17 +59,15 @@ import {
   getWalletFromPkByPin,
   canLoginWithPkFromPin,
 } from 'utils/keychain';
-import {
-  findFirstEtherspotAccount,
-} from 'utils/accounts';
+import { findFirstEtherspotAccount, getActiveAccountType } from 'utils/accounts';
 import { isTest } from 'utils/environment';
-import { userHasLegacySmartWallet } from 'utils/smartWallet';
 
 // services
 import Storage from 'services/storage';
+import smartWalletService from 'services/smartWallet';
 import { navigate, getNavigationState, getNavigationPathAndParamsState } from 'services/navigation';
 import { firebaseIid, firebaseCrashlytics, firebaseMessaging } from 'services/firebase';
-import etherspot from 'services/etherspot';
+import etherspotService from 'services/etherspot';
 
 // types
 import type { Dispatch, GetState } from 'reducers/rootReducer';
@@ -79,6 +77,7 @@ import type SDKWrapper from 'services/api';
 import { saveDbAction } from './dbActions';
 import { getWalletsCreationEventsAction } from './userEventsActions';
 import { setupSentryAction } from './appActions';
+import { initOnLoginSmartWalletAccountAction, setActiveAccountAction } from './accountsActions';
 import {
   encryptAndSaveWalletAction,
   checkForWalletBackupToastAction,
@@ -236,24 +235,23 @@ export const loginAction = (
 
       dispatch({ type: SET_WALLET, payload: unlockedWallet });
 
+      // init smart wallet
+      await dispatch(initOnLoginSmartWalletAccountAction(decryptedPrivateKey));
+
       // init etherspot
       await dispatch(initEtherspotServiceAction(decryptedPrivateKey));
       const etherspotAccount = findFirstEtherspotAccount(accounts);
+
+      if (getActiveAccountType(accounts) !== ACCOUNT_TYPES.ETHERSPOT_SMART_WALLET && etherspotAccount) {
+        await dispatch(setActiveAccountAction(etherspotAccount.id));
+      }
 
       if (isOnline) {
         // Dispatch action to try and get the latest remote config values...
         dispatch(loadRemoteConfigAction());
 
-        // offline onboarded or very old user that doesn't have etherspot account,
         if (!etherspotAccount) {
-          if (userHasLegacySmartWallet(accounts)) {
-            // user has Archanova Smart Wallet, navigate to upgrade screen
-            navigate(NavigationActions.navigate({ routeName: ARCHANOVA_TO_ETHERSPOT_UPGRADE }));
-            return;
-          }
-
-          // no upgrade screen needed, execute soft migration from key based
-          await dispatch(importEtherspotAccountsAction(decryptedPrivateKey));
+          await dispatch(importEtherspotAccountsAction());
         }
 
         // to get exchange supported assets in order to show only supported assets on exchange selectors
@@ -261,6 +259,12 @@ export const loginAction = (
         dispatch(getExchangeSupportedAssetsAction());
 
         dispatch(checkUserENSNameAction());
+
+        // silent Etherspot Smart Wallet creation
+        const etherspotSmartWalletAccount = findFirstEtherspotAccount(accounts);
+        if (!etherspotSmartWalletAccount) {
+          dispatch(importEtherspotAccountsAction());
+        }
 
         dispatch(checkIfKeyBasedWalletHasPositiveBalanceAction());
         dispatch(checkKeyBasedAssetTransferTransactionsAction());
@@ -478,8 +482,10 @@ export const resetAppServicesAction = () => {
      *  portal recovery will reset etherspot instance itself in order to create it's own
      */
     if (!getState().onboarding.isPortalRecovery) {
-      await etherspot.logout();
+      await smartWalletService.reset();
     }
+
+    await etherspotService.logout();
 
     // reset data stored in keychain
     await resetKeychainDataObject();

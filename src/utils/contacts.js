@@ -25,12 +25,10 @@ import Toast from 'components/Toast';
 // types
 import type { Contact } from 'models/Contact';
 
-// services
-import etherspot from 'services/etherspot';
-
 // utils
-import { reportLog, resolveEnsName } from './common';
+import { resolveEnsName } from './common';
 import { isValidAddress, isEnsName } from './validators';
+
 
 type ResolveContactOptions = {|
   showNotification: boolean;
@@ -55,10 +53,7 @@ export const resolveContact = async (contact: ?Contact, options?: ResolveContact
   }
 
   if (isEnsName(contact.ethAddress)) {
-    const resolvedAddress = await resolveEnsName(contact.ethAddress).catch((error) => {
-      reportLog('getReceiverWithEnsName failed', { error });
-      return null;
-    });
+    const resolvedAddress = await resolveEnsName(contact.ethAddress);
 
     if (!resolvedAddress && showNotificationOption) {
       Toast.show({
@@ -80,12 +75,9 @@ export const getReceiverWithEnsName = async (
   if (!ethAddressOrEnsName) return null;
 
   if (isEnsName(ethAddressOrEnsName)) {
-    const resolved = await etherspot.getENSNode(ethAddressOrEnsName).catch((error) => {
-      reportLog('getReceiverWithEnsName failed', { error });
-      return null;
-    });
+    const resolvedAddress = await resolveEnsName(ethAddressOrEnsName);
 
-    if (!resolved?.address && showNotification) {
+    if (!resolvedAddress && showNotification) {
       Toast.show({
         message: t('toast.ensNameNotFound'),
         emoji: 'woman-shrugging',
@@ -95,7 +87,7 @@ export const getReceiverWithEnsName = async (
 
     return {
       receiverEnsName: ethAddressOrEnsName,
-      receiver: resolved.address,
+      receiver: resolvedAddress,
     };
   }
 
@@ -111,4 +103,31 @@ export const getContactWithEnsName = async (contact: Contact, ensName: string): 
     ensName: resolved?.receiverEnsName,
     ethAddress: resolved?.receiver || contact?.ethAddress,
   };
+};
+
+const isMatchingContact = (contact: Contact, query: ?string) => {
+  if (!query) return true;
+
+  return contact.name.toUpperCase().includes(query.toUpperCase())
+    || contact.ethAddress.toUpperCase().includes(query.toUpperCase())
+    || contact.ensName?.toUpperCase().includes(query.toUpperCase());
+};
+
+const isExactMatch = (contact: Contact, query: ?string) => {
+  if (!query) return false;
+
+  return (
+    contact.name.toUpperCase() === query.toUpperCase() ||
+    contact.ethAddress.toUpperCase() === query.toUpperCase() ||
+    contact.ensName?.toUpperCase() === query.toUpperCase()
+  );
+};
+
+// Filter by query and put exact matches at the beginning of the list.
+export const filterContacts = (contacts: Contact[], query: ?string): Contact[] => {
+  if (!query) return contacts;
+
+  return contacts
+    .filter((contact) => isMatchingContact(contact, query))
+    .sort((contact) => isExactMatch(contact, query) ? 0 : 1);
 };

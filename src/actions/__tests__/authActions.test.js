@@ -35,9 +35,13 @@ import { loginAction } from 'actions/authActions';
 // services
 import Storage from 'services/storage';
 import PillarSdk from 'services/api';
+import etherspotService from 'services/etherspot';
 
 // test utils
-import { mockEtherspotAccount } from 'testUtils/jestSetup';
+import {
+  mockEtherspotAccount,
+  mockEtherspotApiAccount,
+} from 'testUtils/jestSetup';
 
 
 const mockUpdatedUser = {
@@ -50,6 +54,8 @@ jest.mock('services/api', () => jest.fn().mockImplementation(() => ({
   setUsername: jest.fn(),
   userInfo: jest.fn(() => mockUpdatedUser),
 })));
+
+jest.spyOn(etherspotService, 'getAccounts').mockImplementation(() => [mockEtherspotApiAccount]);
 
 const pillarSdk = new PillarSdk();
 const mockStore = configureMockStore([thunk.withExtraArgument(pillarSdk), ReduxAsyncQueue]);
@@ -66,6 +72,8 @@ const mockRegisteredUser: Object = {
   username: 'JonR',
   walletId: 'walletIdUnique',
 };
+
+const mockActiveEtherspotAccount = { ...mockEtherspotAccount, isActive: true };
 
 pillarSdk.userInfo.mockResolvedValue(mockUpdatedUser);
 
@@ -92,12 +100,12 @@ describe('Auth actions', () => {
         backupStatus: { isBackedUp: false, isImported: false },
       },
       connectionKeyPairs: { data: [], lastConnectionKeyIndex: -1 },
-      accounts: { data: [{ ...mockEtherspotAccount, isActive: true }] },
+      accounts: { data: [mockActiveEtherspotAccount] },
       featureFlags: { data: {} },
       appSettings: { data: {} },
       session: { data: { isOnline: true } },
       balances: { data: {} },
-      user: { data: {} },
+      user: { data: { walletId: 'test-wallet-id' } },
     });
   });
 

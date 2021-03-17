@@ -28,7 +28,7 @@ import { BN } from 'ethereumjs-util'; // same BigNumber library as in Archanova 
 import { View as mockView } from 'react-native';
 import { utils, BigNumber as EthersBigNumber, constants as ethersConstants, Wallet as EthersWallet } from 'ethers';
 import mocktract from 'mocktract';
-import { Account, AccountStates, AccountStores, AccountTypes } from 'etherspot';
+import * as Etherspot from 'etherspot';
 
 // constants
 import { ACCOUNT_TYPES } from 'constants/accountsConstants';
@@ -275,22 +275,6 @@ export const mockSmartWalletAccountApiData = {
   updatedAt: '2019-05-10T07:15:09.000Z',
 };
 
-export const mockEtherspotAccount = {
-  id: '0x9c',
-  isActive: false,
-  walletId: '',
-  type: ACCOUNT_TYPES.ETHERSPOT_SMART_WALLET,
-};
-
-export const mockEtherspotApiAccount: Account = {
-  address: '0x9c',
-  type: AccountTypes.Key,
-  state: AccountStates.UnDeployed,
-  store: AccountStores.PersonalAccountRegistry,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
-
 export const mockSmartWalletAccount = {
   id: '0x0',
   isActive: false,
@@ -481,3 +465,21 @@ jest.setMock('services/1inch', {
   create1inchOrder: () => Promise.resolve({}),
   fetch1inchSupportedTokens: jest.fn(() => Promise.resolve([])),
 });
+
+export const mockEtherspotAccount = {
+  id: '0x9e',
+  isActive: false,
+  walletId: '',
+  type: ACCOUNT_TYPES.ETHERSPOT_SMART_WALLET,
+};
+
+export const mockEtherspotApiAccount: Etherspot.Account = {
+  address: '0x9e',
+  type: Etherspot.AccountTypes.Contract,
+  state: Etherspot.AccountStates.UnDeployed,
+  store: Etherspot.AccountStores.PersonalAccountRegistry,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+jest.setMock('instabug-reactnative', {});

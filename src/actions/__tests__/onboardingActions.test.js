@@ -36,7 +36,6 @@ import {
 } from 'constants/assetsConstants';
 import { UPDATE_RATES } from 'constants/ratesConstants';
 import { UPDATE_BADGES } from 'constants/badgesConstants';
-import { SET_ETHERSPOT_ACCOUNTS } from 'constants/etherspotConstants';
 
 // actions
 import {
@@ -50,7 +49,7 @@ import { transformAssetsToObject } from 'utils/assets';
 
 // services
 import PillarSdk from 'services/api';
-import etherspot from 'services/etherspot';
+import etherspotService from 'services/etherspot';
 
 // other
 import { initialAssets as mockInitialAssets } from 'fixtures/assets';
@@ -66,6 +65,7 @@ import {
 
 // types
 import type { EthereumWallet } from 'models/Wallet';
+import { SET_ETHERSPOT_ACCOUNTS } from 'constants/etherspotConstants';
 
 
 global.WebSocket = WebSocket;
@@ -93,11 +93,10 @@ jest.mock('services/api', () => jest.fn().mockImplementation(() => ({
   fetchInitialAssets: jest.fn(() => mockFetchInitialAssetsResponse),
   fetchSupportedAssets: jest.fn(() => mockSupportedAssets),
   fetchBadges: jest.fn(() => mockUserBadges),
-  registerSmartWallet: jest.fn(() => Promise.resolve(null)),
 })));
 
 
-jest.spyOn(etherspot, 'getAccounts').mockImplementation(() => [mockEtherspotApiAccount]);
+jest.spyOn(etherspotService, 'getAccounts').mockImplementation(() => [mockEtherspotApiAccount]);
 
 const pillarSdk = new PillarSdk();
 
@@ -134,6 +133,8 @@ const mockOauthTokens: Object = {
 
 const mockFcmToken = '12x2342x212';
 const randomPrivateKey = '0x09e910621c2e988e9f7f6ffcd7024f54ec1461fa6e86a4b545e9e1fe21c28866';
+
+const mockNewEtherspotAccount = { ...mockEtherspotAccount, extra: mockEtherspotApiAccount };
 
 describe('Onboarding actions', () => {
   let store;
@@ -245,7 +246,7 @@ describe('Onboarding actions', () => {
         data: mockImportedWallet,
       },
       user: { data: mockUser },
-      accounts: { data: [mockEtherspotAccount] },
+      accounts: { data: [mockNewEtherspotAccount] },
       assets: {
         supportedAssets: [],
         data: { [mockEtherspotAccount.id]: transformAssetsToObject(mockInitialAssets) },
@@ -264,8 +265,8 @@ describe('Onboarding actions', () => {
       { type: UPDATE_RATES, payload: mockExchangeRates },
       { type: UPDATE_BADGES, payload: mockUserBadges.map((badge) => ({ ...badge, balance: 1 })) },
       { type: SET_ETHERSPOT_ACCOUNTS, payload: [mockEtherspotApiAccount] },
-      { type: UPDATE_ACCOUNTS, payload: [{ ...mockEtherspotAccount, extra: mockEtherspotApiAccount }] },
-      { type: UPDATE_ACCOUNTS, payload: [{ ...mockEtherspotAccount, isActive: true }] },
+      { type: UPDATE_ACCOUNTS, payload: [mockNewEtherspotAccount] },
+      { type: UPDATE_ACCOUNTS, payload: [{ ...mockNewEtherspotAccount, isActive: true }] },
       {
         type: SET_INITIAL_ASSETS,
         payload: {

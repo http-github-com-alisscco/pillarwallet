@@ -73,6 +73,7 @@ import { resetAppServicesAction, resetAppStateAction } from 'actions/authActions
 import { fetchReferralRewardAction } from 'actions/referralsActions';
 import { checkIfKeyBasedWalletHasPositiveBalanceAction } from 'actions/keyBasedAssetTransferActions';
 import { getExchangeSupportedAssetsAction } from 'actions/exchangeActions';
+import { importEtherspotAccountsAction, initEtherspotServiceAction } from 'actions/etherspotActions';
 
 // other
 import { initialAssets } from 'fixtures/assets';
@@ -80,11 +81,6 @@ import { initialAssets } from 'fixtures/assets';
 // types
 import type { Dispatch, GetState } from 'reducers/rootReducer';
 import type SDKWrapper from 'services/api';
-import {
-  importEtherspotAccountsAction,
-  initEtherspotServiceAction,
-  initPPNAction,
-} from 'actions/etherspotActions';
 
 
 export const setupUserAction = (username: ?string, recoveryData?: Object) => {
@@ -251,10 +247,10 @@ export const setupAppServicesAction = (privateKey: ?string) => {
       dispatch(fetchReferralRewardAction());
 
       await dispatch(initEtherspotServiceAction(privateKey));
-      await dispatch(importEtherspotAccountsAction(privateKey));
+      await dispatch(importEtherspotAccountsAction());
 
       // await dispatch(fetchTransactionsHistoryAction()); TODO: etherspot
-      dispatch(initPPNAction());
+      // dispatch(initPPNAction()); TODO: Smart Wallet PPN
 
       // add wallet created / imported events
       dispatch(getWalletsCreationEventsAction());

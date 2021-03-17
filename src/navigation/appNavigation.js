@@ -68,7 +68,7 @@ import AccountsScreen from 'screens/Accounts';
 import AddOrEditUserScreen from 'screens/Users/AddOrEditUser';
 import UnsettledAssetsScreen from 'screens/UnsettledAssets';
 import LogoutPendingScreen from 'screens/LogoutPending';
-import ReferFriendsScreen from 'screens/ReferFriends';
+import ReferFriendsScreen from 'screens/ReferFriends/ReferFriendsScreen';
 import ReferralSentScreen from 'screens/ReferFriends/ReferralSent';
 import ServicesScreen from 'screens/Services';
 import StorybookScreen from 'screens/Storybook';

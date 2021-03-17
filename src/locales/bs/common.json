@@ -937,30 +937,6 @@
     }
   },
 
-  "relayerMigrationContent": {
-    "modal": {
-      "switch": {
-        "title": "Plaćanje transakcija sa PLR-om",
-        "paragraph": "Pozdrav ETH! Nakon promjenje moći ćete plaćati troškove sa PLR-om. ",
-        "button": {
-          "switch": "Prebacivanje"
-        },
-        "label": {
-          "freeSwitching": "Prebacivanje je besplatno",
-          "switchPending": "Transakcija zamjene je na čekanju",
-          "waitingForConfirmation": "Čekanje na potvrdu..."
-        }
-      },
-      "verification": {
-        "title": {
-          "email": "Unesite kontrolni kod (email)",
-          "phone": "Unesite kontrolni kôd (SMS)"
-        },
-        "error": "Pokušajte ponovo"
-      }
-    }
-  },
-
   "addressBookContent": {
     "title": {
       "allowAccess": "Pristup adresaru"
