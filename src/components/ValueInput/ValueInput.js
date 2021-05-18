@@ -36,8 +36,14 @@ import Input from 'components/Input';
 import { Spacing } from 'components/Layout';
 import Modal from 'components/Modal';
 
-import { formatAmount, isValidNumber, wrapBigNumber, hasTooMuchDecimals, noop } from 'utils/common';
-import { formatAmount, isValidNumber, wrapBigNumber, noop, formatFiat } from 'utils/common';
+import {
+  formatAmount,
+  isValidNumber,
+  wrapBigNumber,
+  noop,
+  hasTooMuchDecimals,
+  formatFiat,
+} from 'utils/common';
 import { getThemeColors } from 'utils/themes';
 import { images } from 'utils/images';
 import { calculateMaxAmount, getFormattedBalanceInFiat, getBalanceInFiat } from 'utils/assets';
