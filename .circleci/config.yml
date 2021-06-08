@@ -196,12 +196,7 @@ aliases:
     run:
       name: Generate and upload sourcemap for Android
       command: |
-        react-native bundle --platform android \
-          --entry-file index.js \
-          --dev false \
-          --bundle-output ./android/main.jsbundle \
-          --sourcemap-output ./android-sourcemap.json &&
-          zip ./android-sourcemap.zip ./android-sourcemap.json
+        yarn android:sourcemap
 
 jobs:
 
