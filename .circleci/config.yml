@@ -192,6 +192,16 @@ aliases:
       name: Install coureutils
       command: |
         brew install coreutils
+  - &generate_instabug_sourcemap_android
+    run:
+      name: Generate and upload sourcemap for Android
+      command: |
+        react-native bundle --platform android \
+          --entry-file index.js \
+          --dev false \
+          --bundle-output ./android/main.jsbundle \
+          --sourcemap-output ./android-sourcemap.json &&
+          zip ./android-sourcemap.zip ./android-sourcemap.json
 
 jobs:
 
@@ -218,6 +228,7 @@ jobs:
       - *yarn_install
       - *yarn_save_cache
       - *node_save_cache
+      - *generate_instabug_sourcemap_android
       - run:
           name: Run validation
           command: yarn validate
