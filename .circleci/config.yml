@@ -197,12 +197,13 @@ aliases:
       name: Generate and upload sourcemap for Android
       command: |
         yarn android:sourcemap
+        curl -v -d "data=@./android-sourcemap.zip" "https://api.instabug.com/api/sdk/v3/symbols_files?symbols_file&platform=react_native&os=android&application_token=${INSTABUG_APPCENTER_TOKEN}"
   - &generate_instabug_sourcemap_ios
     run:
       name: Generate and upload sourcemap for iOS
       command: |
         yarn ios:sourcemap
-
+        curl -v -d "data=@./ios-sourcemap.zip" "https://api.instabug.com/api/sdk/v3/symbols_files?symbols_file&platform=react_native&os=ios&application_token=${INSTABUG_APPCENTER_TOKEN}"
 jobs:
 
   build-and-test:
