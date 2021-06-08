@@ -197,6 +197,11 @@ aliases:
       name: Generate and upload sourcemap for Android
       command: |
         yarn android:sourcemap
+  - &generate_instabug_sourcemap_ios
+    run:
+      name: Generate and upload sourcemap for iOS
+      command: |
+        yarn ios:sourcemap
 
 jobs:
 
@@ -224,6 +229,7 @@ jobs:
       - *yarn_save_cache
       - *node_save_cache
       - *generate_instabug_sourcemap_android
+      - *generate_instabug_sourcemap_ios
       - run:
           name: Run validation
           command: yarn validate
