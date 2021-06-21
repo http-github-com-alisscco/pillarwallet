@@ -213,6 +213,9 @@ jobs:
       - run:
           name: Save build number
           command: |
+            export INSTABUG_APP_VERSION_NAME=$(cat ~/pillarwallet/buildNumber.txt)
+            export INSTABUG_APP_VERSION_CODE=$(cat ~/pillarwallet/buildNumber.txt)
+            export INSTABUG_APP_TOKEN=$INSTABUG_APPCENTER_TOKEN
             APP_BUILD_NUMBER=${CIRCLE_BUILD_NUM}
             mkdir -p /tmp/workspace/build-num
             mkdir -p /tmp/workspace/releases
