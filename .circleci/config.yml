@@ -192,19 +192,22 @@ aliases:
       name: Install coureutils
       command: |
         brew install coreutils
-  - &generate_instabug_sourcemap_android
+  - &generate_appcenter_instabug_sourcemap_android
     run:
-      name: Generate and upload sourcemap for Android
+      name: Generate and upload sourcemap for Android on AppCenter
       command: |
+        export BUILD_NUMBER=$(cat ~/pillarwallet/buildNumber.txt)
+        export EXTRACTED_PACKAGE_VERSION=$(node -e "console.log(require('./package.json').version);")
         env
         yarn android:sourcemap
         curl -X POST 'https://api.instabug.com/api/sdk/v3/symbols_files' -F "app_version={\"code\": ${CIRCLE_BUILD_NUM} ,\"name\": ${CIRCLE_BUILD_NUM} }" -F "symbols_file=@/home/circleci/pillarwallet/android-sourcemap.json" -F "application_token=${INSTABUG_APPCENTER_TOKEN}" -F "platform=react_native" -F "os=android"
-  - &generate_instabug_sourcemap_ios
+  - &generate_appcenter_instabug_sourcemap_ios
     run:
-      name: Generate and upload sourcemap for iOS
+      name: Generate and upload sourcemap for iOS on AppCenter
       command: |
+        export BUILD_NUMBER=$(cat ~/pillarwallet/buildNumber.txt)
         yarn ios:sourcemap
-        curl -X POST 'https://api.instabug.com/api/sdk/v3/symbols_files' -F "app_version={\"code\": ${APP_BUILD_NUMBER} ,\"name\": ${APP_BUILD_NUMBER} }" -F "symbols_file=@/home/circleci/pillarwallet/android-sourcemap.json" -F "application_token=${INSTABUG_APP_TOKEN}" -F "platform=react_native" -F "os=android"
+        curl -X POST 'https://api.instabug.com/api/sdk/v3/symbols_files' -F "app_version={\"code\": ${CIRCLE_BUILD_NUM} ,\"name\": ${CIRCLE_BUILD_NUM} }" -F "symbols_file=@/home/circleci/pillarwallet/ios-sourcemap.json" -F "application_token=${INSTABUG_APPCENTER_TOKEN}" -F "platform=react_native" -F "os=ios"
 jobs:
 
   build-and-test:
@@ -230,8 +233,8 @@ jobs:
       - *yarn_install
       - *yarn_save_cache
       - *node_save_cache
-      - *generate_instabug_sourcemap_android
-      - *generate_instabug_sourcemap_ios
+      - *generate_appcenter_instabug_sourcemap_android
+      - *generate_appcenter_instabug_sourcemap_ios
       - run:
           name: Run validation
           command: yarn validate
