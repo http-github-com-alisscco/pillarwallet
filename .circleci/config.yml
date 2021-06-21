@@ -198,7 +198,7 @@ aliases:
       command: |
         env
         yarn android:sourcemap
-        curl -X POST 'https://api.instabug.com/api/sdk/v3/symbols_files' -F "app_version={\"code\": ${APP_BUILD_NUMBER} ,\"name\": ${APP_BUILD_NUMBER} }" -F "symbols_file=@/home/circleci/pillarwallet/android-sourcemap.json" -F "application_token=${INSTABUG_APP_TOKEN}" -F "platform=react_native" -F "os=android"
+        curl -X POST 'https://api.instabug.com/api/sdk/v3/symbols_files' -F "app_version={\"code\": ${CIRCLE_BUILD_NUM} ,\"name\": ${CIRCLE_BUILD_NUM} }" -F "symbols_file=@/home/circleci/pillarwallet/android-sourcemap.json" -F "application_token=${INSTABUG_APPCENTER_TOKEN}" -F "platform=react_native" -F "os=android"
   - &generate_instabug_sourcemap_ios
     run:
       name: Generate and upload sourcemap for iOS
