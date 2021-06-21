@@ -196,12 +196,7 @@ aliases:
     run:
       name: Generate and upload sourcemap for Android
       command: |
-        export INSTABUG_APP_VERSION_NAME=$(cat ~/pillarwallet/buildNumber.txt)
-        export INSTABUG_APP_VERSION_CODE=$(cat ~/pillarwallet/buildNumber.txt)
-        export INSTABUG_APP_TOKEN=$INSTABUG_APPCENTER_TOKEN
-        echo ${INSTABUG_APP_VERSION_NAME}
-        echo ${INSTABUG_APP_VERSION_CODE}
-        echo ${INSTABUG_APP_TOKEN}
+        env
         yarn android:sourcemap
         curl -X POST 'https://api.instabug.com/api/sdk/v3/symbols_files' -F "app_version={\"code\": ${APP_BUILD_NUMBER} ,\"name\": ${APP_BUILD_NUMBER} }" -F "symbols_file=@/home/circleci/pillarwallet/android-sourcemap.json" -F "application_token=${INSTABUG_APP_TOKEN}" -F "platform=react_native" -F "os=android"
   - &generate_instabug_sourcemap_ios
